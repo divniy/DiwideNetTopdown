@@ -1,20 +1,22 @@
 using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Diwide.Topdown
 {
-    public class PlayerInputHandler : MonoBehaviour
+    [RequireComponent(typeof(Rigidbody))]
+    public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     {
-        [SerializeField] private Transform target;
+        public static PlayerController LocalPlayerInstance;
+        public static PlayerController TargetPlayerInstance;
+        
         [SerializeField] private ProjectileController bulletPrefab;
         
         [SerializeField, Range(1f, 10f)] 
         private float moveSpeed = 2f;
         [SerializeField, Range(.5f, 5f)] 
         private float maxSpeed = 2f;
-        [SerializeField] 
-        private bool isFirstPlayer = true;
         [SerializeField, Range(.1f, 1f)] 
         private float attackDelay = .1f;
         [SerializeField, Range(.1f, 1f)] 
@@ -22,36 +24,66 @@ namespace Diwide.Topdown
 
         [SerializeField] private Vector3 firePoint;
         
-        [Range(1f, 30f)]
-        public float health = 5f;
+        [Range(1f, 100f)]
+        public float health = 100f;
         
         private PlayerControls _controls;
 
-        private InputActionMap _actionMap;
-
         private Rigidbody _rigidbody;
+        
+        private Transform _target;
         
         void Awake()
         {
             _controls = new PlayerControls();
-            _actionMap = (isFirstPlayer) ? _controls.Player1 : _controls.Player2;
+
+            if (photonView.IsMine)
+            {
+                LocalPlayerInstance = this;
+                if(TargetPlayerInstance != null) SetTarget(TargetPlayerInstance.transform);
+            }
+            else
+            {
+                TargetPlayerInstance = this;
+                if(LocalPlayerInstance != null) LocalPlayerInstance.SetTarget(transform);
+            }
+
+            DontDestroyOnLoad(gameObject);
         }
 
-        private void OnEnable() => _actionMap.Enable();
-        private void OnDisable() => _actionMap.Disable();
+        public override void OnEnable()
+        {
+            base.OnEnable();
+            _controls.gameplay.Enable();
+        }
+
+        public override void OnDisable()
+        {
+            base.OnDisable();
+            _controls.gameplay.Disable();
+        }
 
         private void Start()
         {
             _rigidbody = GetComponent<Rigidbody>();
+        }
 
-            StartCoroutine(Fire());
-            StartCoroutine(Focus());
+        public void SetTarget(Transform target)
+        {
+            _target = target;
+            
+            if (photonView.IsMine)
+            {
+                // StartCoroutine(Fire());
+                StartCoroutine(Focus());
+            }
         }
 
         private IEnumerator Fire()
         {
             while (true)
             {
+                if (_target == null) yield break;
                 var bullet = Instantiate(bulletPrefab, transform.TransformPoint(firePoint), transform.rotation);
                 bullet.Parent = gameObject;
                 yield return new WaitForSeconds(attackDelay);
@@ -62,15 +94,20 @@ namespace Diwide.Topdown
         {
             while (true)
             {
-                transform.LookAt(target);
+                if (_target == null) yield break;
+                transform.LookAt(_target);
                 transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f);
                 yield return new WaitForSeconds(rotateDelay);
             }
+            
+            // yield return 
         }
 
         private void FixedUpdate()
         {
-            Vector2 moveVector = _actionMap.FindAction("Move").ReadValue<Vector2>();
+            if (!photonView.IsMine) return;
+            Vector2 moveVector = _controls.gameplay.Move.ReadValue<Vector2>();
+            // Vector2 moveVector = _actionMap.FindAction("Move").ReadValue<Vector2>();
             
             if (moveVector == Vector2.zero) return;
 
@@ -96,6 +133,18 @@ namespace Diwide.Topdown
         {
             Gizmos.color = Color.green;
             Gizmos.DrawSphere(firePoint, .2f);
+        }
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+            if (stream.IsWriting)
+            {
+                stream.SendNext(health);
+            }
+            else
+            {
+                health = (float)stream.ReceiveNext();
+            }
         }
     }
 }
