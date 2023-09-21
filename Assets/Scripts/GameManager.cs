@@ -1,5 +1,6 @@
 using System;
 using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -31,6 +32,11 @@ namespace Diwide.Topdown
                 Vector3 spawnPosition = new Vector3(randomSpawnPoint.x, 0, randomSpawnPoint.y);
                 PhotonNetwork.Instantiate(PlayerPrefab.name, spawnPosition, Quaternion.identity);
             }
+        }
+
+        public override void OnPlayerLeftRoom(Player otherPlayer)
+        {
+            LeaveRoom();
         }
 
         public void LeaveRoom()

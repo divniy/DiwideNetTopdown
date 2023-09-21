@@ -74,23 +74,23 @@ namespace Diwide.Topdown
             
             if (photonView.IsMine)
             {
-                // StartCoroutine(Fire());
-                StartCoroutine(Focus());
+                StartCoroutine(AutoFocus());
+                StartCoroutine(AutoFire());
             }
         }
 
-        private IEnumerator Fire()
+        private IEnumerator AutoFire()
         {
             while (true)
             {
                 if (_target == null) yield break;
-                var bullet = Instantiate(bulletPrefab, transform.TransformPoint(firePoint), transform.rotation);
-                bullet.Parent = gameObject;
+                // Fire(transform.TransformPoint(firePoint), transform.rotation);
+                Fire();
                 yield return new WaitForSeconds(attackDelay);
             }
         }
 
-        private IEnumerator Focus()
+        private IEnumerator AutoFocus()
         {
             while (true)
             {
@@ -103,11 +103,28 @@ namespace Diwide.Topdown
             // yield return 
         }
 
+        public void Fire()
+        {
+            var position = transform.TransformPoint(firePoint);
+            photonView.RPC("FireRPC", RpcTarget.AllViaServer, position, transform.rotation);
+        }
+
+        [PunRPC]
+        public void FireRPC(Vector3 position, Quaternion rotation, PhotonMessageInfo info)
+        {
+            // float lag = 0f;
+            float lag = (float) (PhotonNetwork.Time - info.SentServerTime);
+            
+            var bullet = Instantiate(bulletPrefab, position, Quaternion.identity);
+            bullet.InitializeProjectile(photonView.Owner, (rotation * Vector3.forward), Mathf.Abs(lag));
+            // bullet.Parent = gameObject;
+            // PhotonNetwork.Instantiate(bulletPrefab.name, transform.TransformPoint(firePoint), transform.rotation);
+        }
+
         private void FixedUpdate()
         {
             if (!photonView.IsMine) return;
             Vector2 moveVector = _controls.gameplay.Move.ReadValue<Vector2>();
-            // Vector2 moveVector = _actionMap.FindAction("Move").ReadValue<Vector2>();
             
             if (moveVector == Vector2.zero) return;
 
@@ -122,10 +139,10 @@ namespace Diwide.Topdown
         private void OnTriggerEnter(Collider other)
         {
             var bullet = other.GetComponent<ProjectileController>();
-            if (bullet == null || bullet.Parent == gameObject) return;
+            if (bullet == null || bullet.Owner == PhotonNetwork.LocalPlayer) return;
 
             health -= bullet.Damage;
-            Destroy(other.gameObject);
+            // Destroy(other.gameObject);
             if (health <= 0f) Debug.Log($"Player with name {name} is dead");
         }
 

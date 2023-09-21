@@ -1,4 +1,5 @@
 using System.Collections;
+using Photon.Realtime;
 using UnityEngine;
 
 namespace Diwide.Topdown
@@ -13,22 +14,39 @@ namespace Diwide.Topdown
         private float _lifetime = 7f;
 
         public float Damage => _damage;
-        public GameObject Parent { get; set; }
+        public Player Owner { get; private set; }
         
         void Start()
         {
-            StartCoroutine(OnDieCoroutine());
+            // StartCoroutine(OnDieCoroutine());
+            Destroy(gameObject, _lifetime);
         }
-
-        void Update()
+        
+        public void OnTriggerEnter(Collider _)
         {
-            transform.position += transform.forward * (_moveSpeed * Time.deltaTime);
-        }
-
-        private IEnumerator OnDieCoroutine()
-        {
-            yield return new WaitForSeconds(_lifetime);
             Destroy(gameObject);
+        }
+
+        // void Update()
+        // {
+        //     transform.position += transform.forward * (_moveSpeed * Time.deltaTime);
+        // }
+
+        // private IEnumerator OnDieCoroutine()
+        // {
+        //     yield return new WaitForSeconds(_lifetime);
+        //     Destroy(gameObject);
+        // }
+
+        public void InitializeProjectile(Player owner, Vector3 originalDirection, float lagCompensation)
+        {
+            Owner = owner;
+
+            transform.forward = originalDirection;
+
+            Rigidbody rigidbody = GetComponent<Rigidbody>();
+            rigidbody.velocity = originalDirection * _moveSpeed;
+            rigidbody.position += rigidbody.velocity * lagCompensation;
         }
     }
 }
