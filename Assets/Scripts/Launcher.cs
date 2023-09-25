@@ -40,6 +40,15 @@ namespace Diwide.Topdown
                 PhotonNetwork.GameVersion = gameVersion;
             }
         }
+
+        public void QuitApplication()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#elif UNITY_STANDALONE
+            Application.Quit();
+#endif
+        }
         
         void LogState(string message)
         {

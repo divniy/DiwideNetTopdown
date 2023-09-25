@@ -154,7 +154,7 @@ MonoBehaviour:
   bulletPrefab: {fileID: 8669271356657775906, guid: e8ebe15be65cb4254ae1ec4467b1d6cb, type: 3}
   moveSpeed: 3
   maxSpeed: 3
-  attackDelay: 0.3
+  attackDelay: 1.5
   rotateDelay: 0.25
   firePoint: {x: 0.4, y: 0, z: 0.78}
   health: 5

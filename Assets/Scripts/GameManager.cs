@@ -49,21 +49,6 @@ namespace Diwide.Topdown
             LoadLobbyScene();
         }
 
-        private void OnQuitAction(InputAction.CallbackContext obj)
-        {
-            Debug.Log("Quit application performed");
-            QuitApplication();
-        }
-
-        public void QuitApplication()
-        {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#elif UNITY_STANDALONE
-            Application.Quit();
-#endif
-        }
-
         private void LoadLobbyScene()
         {
             SceneManager.LoadScene(0);

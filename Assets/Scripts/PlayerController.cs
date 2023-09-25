@@ -17,7 +17,7 @@ namespace Diwide.Topdown
         private float moveSpeed = 2f;
         [SerializeField, Range(.5f, 5f)] 
         private float maxSpeed = 2f;
-        [SerializeField, Range(.1f, 1f)] 
+        [SerializeField, Range(.3f, 3f)] 
         private float attackDelay = .1f;
         [SerializeField, Range(.1f, 1f)] 
         private float rotateDelay = .25f;
@@ -32,6 +32,8 @@ namespace Diwide.Topdown
         private Rigidbody _rigidbody;
         
         private Transform _target;
+
+        private CameraController _cameraController;
         
         void Awake()
         {
@@ -66,6 +68,12 @@ namespace Diwide.Topdown
         private void Start()
         {
             _rigidbody = GetComponent<Rigidbody>();
+
+            if (photonView.IsMine)
+            {
+                _cameraController = Camera.main.GetComponent<CameraController>();
+                _cameraController.FollowTarget(transform);
+            }
         }
 
         public void SetTarget(Transform target)
@@ -129,7 +137,9 @@ namespace Diwide.Topdown
             if (moveVector == Vector2.zero) return;
 
             var velocity = _rigidbody.velocity;
-            velocity += new Vector3(moveVector.x, 0, moveVector.y) * moveSpeed * Time.fixedDeltaTime;
+            var deltaVelocity = transform.TransformVector(new Vector3(moveVector.x, 0, moveVector.y));
+            velocity += deltaVelocity * moveSpeed * Time.fixedDeltaTime;
+            // velocity += new Vector3(moveVector.x, 0, moveVector.y) * moveSpeed * Time.fixedDeltaTime;
             velocity.y = 0;
             velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
 

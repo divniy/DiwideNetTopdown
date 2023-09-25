@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 426539180}
   - component: {fileID: 426539179}
   - component: {fileID: 426539178}
+  - component: {fileID: 426539181}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -215,6 +216,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &426539181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 426539177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0926eb17b7bc41a3927c8b97180f83fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  distance: 10
+  height: 5
+  centerOffset: {x: 0, y: 0, z: 0}
+  interpolationRatio: 2
 --- !u!1 &722578105
 GameObject:
   m_ObjectHideFlags: 0
@@ -256,7 +273,7 @@ MonoBehaviour:
     - m_Name: 
       m_Id: f691dc88-b449-495b-a572-ed3c2ae01b77
       m_Path: <Keyboard>/escape
-      m_Interactions: Hold(duration=2)
+      m_Interactions: Hold(duration=1)
       m_Processors: 
       m_Groups: 
       m_Action: Leave Room
