@@ -22,9 +22,12 @@ namespace Diwide.Topdown
             Destroy(gameObject, _lifetime);
         }
         
-        public void OnTriggerEnter(Collider _)
+        public void OnTriggerEnter(Collider other)
         {
-            Destroy(gameObject);
+            if (other.gameObject.CompareTag("Player"))
+            {
+                Destroy(gameObject);
+            }
         }
 
         // void Update()

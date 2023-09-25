@@ -28,7 +28,7 @@ namespace Diwide.Topdown
 
             if (PhotonNetwork.InRoom && PlayerController.LocalPlayerInstance == null)
             {
-                Vector2 randomSpawnPoint = Random.insideUnitCircle * 5;
+                Vector2 randomSpawnPoint = Random.insideUnitCircle * 20;
                 Vector3 spawnPosition = new Vector3(randomSpawnPoint.x, 0, randomSpawnPoint.y);
                 PhotonNetwork.Instantiate(PlayerPrefab.name, spawnPosition, Quaternion.identity);
             }

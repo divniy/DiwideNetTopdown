@@ -31,17 +31,24 @@ namespace Diwide.Topdown
         private PlayerControls _controls;
 
         private Rigidbody _rigidbody;
+
+        private Collider _collider;
         
         private Transform _target;
 
         private CameraController _cameraController;
+
+        private bool _isControllable = true;
         
         public ReactiveProperty<float> Health { get; private set; }
+        
+        public IReadOnlyReactiveProperty<bool> IsDead { get; private set; }
         
         void Awake()
         {
             _controls = new PlayerControls();
             Health = new ReactiveProperty<float>(maxHealth);
+            IsDead = Health.Select(v => v <= 0).ToReactiveProperty();
 
             if (photonView.IsMine)
             {
@@ -72,6 +79,7 @@ namespace Diwide.Topdown
         private void Start()
         {
             _rigidbody = GetComponent<Rigidbody>();
+            _collider = GetComponent<Collider>();
 
             if (photonView.IsMine)
             {
@@ -81,6 +89,11 @@ namespace Diwide.Topdown
                 //todo: Remove this
                 Health.Subscribe(_ => Debug.Log($"Health is now {Health.Value}"));
             }
+
+            IsDead.Where(v => v == true).Subscribe(_ =>
+            {
+                photonView.RPC("EndOfRound", RpcTarget.All);
+            });
         }
 
         public void SetTarget(Transform target)
@@ -135,10 +148,25 @@ namespace Diwide.Topdown
             // bullet.Parent = gameObject;
             // PhotonNetwork.Instantiate(bulletPrefab.name, transform.TransformPoint(firePoint), transform.rotation);
         }
+        
+        [PunRPC]
+        public void EndOfRound()
+        {
+            _isControllable = false;
+            _rigidbody.velocity = Vector3.zero;
+            _collider.enabled = false;
+            
+            if (photonView.IsMine)
+            {
+                // StopAllCoroutines();
+                StartCoroutine(ShowResultsThenExit());
+            }
+        }
 
         private void FixedUpdate()
         {
-            if (!photonView.IsMine) return;
+            if (!photonView.IsMine || !_isControllable) return;
+            
             Vector2 moveVector = _controls.gameplay.Move.ReadValue<Vector2>();
             
             if (moveVector == Vector2.zero) return;
@@ -158,10 +186,30 @@ namespace Diwide.Topdown
             var bullet = other.GetComponent<ProjectileController>();
             if (bullet == null || bullet.Owner == PhotonNetwork.LocalPlayer) return;
 
-            Health.Value = Mathf.Max(Health.Value - bullet.Damage, 0);
+            if (bullet != null && photonView.IsMine && bullet.Owner != PhotonNetwork.LocalPlayer)
+            {
+                Health.Value = Mathf.Max(Health.Value - bullet.Damage, 0);
+            }
+            
             // health -= bullet.Damage;
             // Destroy(other.gameObject);
             // if (health <= 0f) Debug.Log($"Player with name {name} is dead");
+        }
+
+        private IEnumerator ShowResultsThenExit()
+        {
+            if (IsDead.Value)
+            {
+                Debug.Log("You lose");
+            }
+            else
+            {
+                Debug.Log("You win");
+            }
+
+            yield return new WaitForSeconds(5);
+
+            PhotonNetwork.LeaveRoom();
         }
 
         private void OnDrawGizmos()
