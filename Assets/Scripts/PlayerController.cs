@@ -1,5 +1,6 @@
 using System.Collections;
 using Photon.Pun;
+using UniRx;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,7 +26,7 @@ namespace Diwide.Topdown
         [SerializeField] private Vector3 firePoint;
         
         [Range(1f, 100f)]
-        public float health = 100f;
+        public float maxHealth = 100f;
         
         private PlayerControls _controls;
 
@@ -35,9 +36,12 @@ namespace Diwide.Topdown
 
         private CameraController _cameraController;
         
+        public ReactiveProperty<float> Health { get; private set; }
+        
         void Awake()
         {
             _controls = new PlayerControls();
+            Health = new ReactiveProperty<float>(maxHealth);
 
             if (photonView.IsMine)
             {
@@ -73,6 +77,9 @@ namespace Diwide.Topdown
             {
                 _cameraController = Camera.main.GetComponent<CameraController>();
                 _cameraController.FollowTarget(transform);
+                
+                //todo: Remove this
+                Health.Subscribe(_ => Debug.Log($"Health is now {Health.Value}"));
             }
         }
 
@@ -151,9 +158,10 @@ namespace Diwide.Topdown
             var bullet = other.GetComponent<ProjectileController>();
             if (bullet == null || bullet.Owner == PhotonNetwork.LocalPlayer) return;
 
-            health -= bullet.Damage;
+            Health.Value = Mathf.Max(Health.Value - bullet.Damage, 0);
+            // health -= bullet.Damage;
             // Destroy(other.gameObject);
-            if (health <= 0f) Debug.Log($"Player with name {name} is dead");
+            // if (health <= 0f) Debug.Log($"Player with name {name} is dead");
         }
 
         private void OnDrawGizmos()
@@ -166,11 +174,11 @@ namespace Diwide.Topdown
         {
             if (stream.IsWriting)
             {
-                stream.SendNext(health);
+                stream.SendNext(Health.Value);
             }
             else
             {
-                health = (float)stream.ReceiveNext();
+                Health.Value = (float)stream.ReceiveNext();
             }
         }
     }
